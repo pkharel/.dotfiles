@@ -9,6 +9,8 @@
 [core]
   editor = vim
   excludesfile = ~/.gitignore
+  fsmonitor = true
+  untrackedCache = true
 [column]
   ui = auto
 [branch]
@@ -41,9 +43,6 @@
   autoSquash = true
   autoStash = true
   updateRefs = true
-[core]
-  fsmonitor = true
-  untrackedCache = true
 [merge]
   conflictstyle = zdiff3
 [pull]
