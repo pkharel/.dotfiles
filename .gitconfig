@@ -1,13 +1,12 @@
 [user]
   name = Pradosh Kharel
+  email = pradosh.kharel@gmail.com
 [credential]
   helper = store
-[diff]
-  tool = vimdiff
 [difftool]
   prompt = false
 [core]
-  editor = vim
+	editor = nvim
   excludesfile = ~/.gitignore
 [column]
   ui = auto
@@ -18,6 +17,7 @@
 [init]
   defaultBranch = main
 [diff]
+  tool = vimdiff
   algorithm = histogram
   colorMoved = plain
   mnemonicPrefix = true
