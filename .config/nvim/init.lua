@@ -28,7 +28,7 @@ vim.opt.mouse = "a"
 vim.opt.ignorecase = true        -- Case-insensitive search...
 vim.opt.smartcase = true         -- ...unless capital letters are typed explicitly
 vim.opt.incsearch = true         -- Show live matches while typing
-vim.opt.hlsearch = false
+vim.opt.hlsearch = true
 
 -- Tab and Indentation Defaults
 vim.opt.expandtab = true
@@ -62,16 +62,28 @@ require("lazy").setup({
     dependencies = {
         'nvim-lua/plenary.nvim',
         { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
-    }
+    },
+    config = function()
+      local telescope = require("telescope")
+      telescope.setup({})
+      pcall(telescope.load_extension, "fzf")
+
+      local builtin = require("telescope.builtin")
+      vim.keymap.set("n", "<leader>ff", builtin.find_files, { desc = "Find Files" })
+      vim.keymap.set("n", "<leader>fg", builtin.live_grep, { desc = "Live Grep" })
+      vim.keymap.set("n", "<leader>fb", builtin.buffers, { desc = "Find Buffers" })
+      vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "Help Tags" })
+    end,
   },
   {
     "nvim-neo-tree/neo-tree.nvim",
     branch = "v3.x",
     dependencies = {
       "nvim-lua/plenary.nvim",
-      "nvim-tree/nvim-web-devicons",
       "MunifTanjim/nui.nvim",
+      "nvim-tree/nvim-web-devicons",
     },
+    lazy = false,
     config = function()
       vim.keymap.set("n", "<leader>e", ":Neotree toggle<CR>", { silent = true, desc = "Toggle File Explorer" })
     end,
@@ -101,6 +113,17 @@ require("lazy").setup({
     end,
   },
   {
+    'Saghen/blink.cmp',
+    version = '*',
+    opts = {
+      keymap = { preset = 'default' },
+      appearance = { use_nvim_cmp_as_default = true, nerd_font_variant = 'mono' },
+      sources = {
+        default = { 'lsp', 'path', 'snippets', 'buffer' },
+      },
+    },
+  },
+  {
     "neovim/nvim-lspconfig",
     dependencies = {
       { "williamboman/mason.nvim", config = true },
@@ -109,40 +132,43 @@ require("lazy").setup({
     config = function()
       require("mason").setup()
 
+      local lspconfig = require("lspconfig")
+      local capabilities = require("blink.cmp").get_lsp_capabilities()
+
       require("mason-lspconfig").setup({
-        ensure_installed = {
-          "lua_ls",
-          "clangd",
-          "pyright",
-          "bashls",
+        ensure_installed = { "lua_ls", "clangd", "pyright", "bashls" },
+        handlers = {
+          function(server_name)
+            lspconfig[server_name].setup({
+              capabilities = capabilities
+            })
+          end,
+          ["lua_ls"] = function()
+            lspconfig.lua_ls.setup({
+              settings = {
+                Lua = {
+                  diagnostics = { globals = { "vim" } },
+                },
+              },
+            })
+          end,
         },
-        automatic_enable = true,
       })
 
-      -- Keymaps attached when LSP connects to a buffer
       vim.api.nvim_create_autocmd("LspAttach", {
         group = vim.api.nvim_create_augroup("UserLspConfig", { clear = true }),
         callback = function(ev)
           local opts = { buffer = ev.buf, silent = true }
-
           vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
           vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
           vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts)
           vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, opts)
-
           vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
           vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+          vim.keymap.set("n", "gr", vim.lsp.buf.references, opts)
+          vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+          vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
         end,
-      })
-
-      vim.lsp.config("lua_ls", {
-        settings = {
-          Lua = {
-            diagnostics = {
-              globals = { "vim" },
-            },
-          },
-        },
       })
     end,
   },
