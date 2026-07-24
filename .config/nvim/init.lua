@@ -1,4 +1,3 @@
--- Set leader keys strictly before anything else loads
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
@@ -17,67 +16,54 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
   end
 end
 vim.opt.rtp:prepend(lazypath)
--- File and Undo persistence
-vim.opt.backupcopy = "yes"         -- Webpack and modern dev-server friendly
-vim.opt.undofile = true            -- Persistent undo history across sessions
-vim.opt.updatetime = 250           -- Faster UI and diagnostic update interval
-vim.opt.termguicolors = true       -- Enable 24-bit RGB colors
+
+-- Custom options
+vim.opt.backupcopy = "yes"        -- Webpack and modern dev-server friendly
+vim.opt.undofile = true          -- Persistent undo history across sessions
+vim.opt.updatetime = 250         -- Faster UI and diagnostic update interval
+vim.opt.termguicolors = true     -- Enable 24-bit RGB colors
+vim.opt.mouse = "a"
 
 -- Search mechanics
-vim.opt.ignorecase = true          -- Case-insensitive search...
-vim.opt.smartcase = true           -- ...unless capital letters are typed explicitly
-vim.opt.incsearch = true           -- Show live matches while typing
+vim.opt.ignorecase = true        -- Case-insensitive search...
+vim.opt.smartcase = true         -- ...unless capital letters are typed explicitly
+vim.opt.incsearch = true         -- Show live matches while typing
 vim.opt.hlsearch = false
 
--- Tab and Indentation Defaults (2-space standard)
+-- Tab and Indentation Defaults
 vim.opt.expandtab = true
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.softtabstop = 0
+vim.opt.smarttab = true
 
 -- Window Splitting Behavior
-vim.opt.splitright = true          -- New vertical splits open to the right
-vim.opt.splitbelow = true          -- New horizontal splits open below
-
----- Text Wrapping & Layout Guide
---vim.opt.textwidth = 80
---vim.opt.formatoptions:append("t")
---vim.opt.formatoptions:remove("l")
---vim.opt.colorcolumn = "80"
+vim.opt.splitright = true        -- New vertical splits open to the right
+vim.opt.splitbelow = true        -- New horizontal splits open below
 
 -- Native UI Elements
-vim.opt.number = true              -- Show absolute line numbers
-vim.opt.relativenumber = true      -- Highly recommended: relative numbers for fast navigation
-vim.opt.cursorline = true          -- Highlight current cursor line
-vim.opt.signcolumn = "yes"         -- Maintain constant margin stability
-
--- ========================================================================== --
--- 3. PLUGIN SPECIFICATIONS & CONFIGURATION
--- ========================================================================== --
+vim.opt.number = true            -- Show absolute line numbers
+vim.opt.relativenumber = true    -- Relative numbers for fast navigation
+vim.opt.cursorline = true        -- Highlight current cursor line
+vim.opt.signcolumn = "yes"       -- Maintain constant margin stability
+vim.opt.colorcolumn = "80"       -- Highlight Column 80
 
 require("lazy").setup({
-  -- High-performance Color Theme
   {
     "folke/tokyonight.nvim",
     lazy = false,
     priority = 1000,
     config = function()
-      vim.cmd[[colorscheme tokyonight-storm]]
-      -- Clean override for the line guide
-      vim.cmd[[highlight ColorColumn ctermbg=darkgray guibg=#2a2f41]]
-    end
+      vim.cmd([[colorscheme tokyonight-storm]])
+    end,
   },
-
   {
     'nvim-telescope/telescope.nvim', version = '*',
     dependencies = {
         'nvim-lua/plenary.nvim',
-        -- optional but recommended
         { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
     }
   },
-
-  -- Integrated File Tree Explorer
   {
     "nvim-neo-tree/neo-tree.nvim",
     branch = "v3.x",
@@ -90,38 +76,30 @@ require("lazy").setup({
       vim.keymap.set("n", "<leader>e", ":Neotree toggle<CR>", { silent = true, desc = "Toggle File Explorer" })
     end,
   },
-
-  -- Seamless Inline Git Tracking Indicator
   {
     "lewis6991/gitsigns.nvim",
-    config = function()
-      require("gitsigns").setup()
-    end
+    opts = {},
   },
-
   {
     "cappyzawa/trim.nvim",
     opts = {
       highlight = true,
     },
   },
-
   {
-    'nvim-treesitter/nvim-treesitter',
+    "nvim-treesitter/nvim-treesitter",
     lazy = false,
-    build = ':TSUpdate',
+    build = ":TSUpdate",
     config = function()
       require("nvim-treesitter.config").setup({
-        -- Keep your default parsers configured here
-        ensure_installed = { "lua", "vim", "vimdoc", "query", "javascript", "typescript", "markdown", "python", "cpp" },
+        ensure_installed = { "c", "cpp", "lua", "vim", "vimdoc", "query", "javascript", "typescript", "markdown", "python", "html", "bash", "yaml", "dockerfile" },
         sync_install = false,
         auto_install = true,
         highlight = { enable = true },
         indent = { enable = true },
       })
-    end
+    end,
   },
-
   {
     "neovim/nvim-lspconfig",
     dependencies = {
@@ -131,7 +109,6 @@ require("lazy").setup({
     config = function()
       require("mason").setup()
 
-      -- Automatically install and enable LSPs in Nvim 0.11+
       require("mason-lspconfig").setup({
         ensure_installed = {
           "lua_ls",
@@ -139,10 +116,10 @@ require("lazy").setup({
           "pyright",
           "bashls",
         },
-        automatic_enable = true, -- Automatically runs vim.lsp.enable() for installed servers
+        automatic_enable = true,
       })
 
-      -- Attach keymaps automatically whenever ANY language server starts up
+      -- Keymaps attached when LSP connects to a buffer
       vim.api.nvim_create_autocmd("LspAttach", {
         group = vim.api.nvim_create_augroup("UserLspConfig", { clear = true }),
         callback = function(ev)
@@ -150,7 +127,7 @@ require("lazy").setup({
 
           vim.keymap.set("n", "[d", vim.diagnostic.goto_prev, opts)
           vim.keymap.set("n", "]d", vim.diagnostic.goto_next, opts)
-          vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, opts)
+          vim.keymap.set("n", "<leader>d", vim.diagnostic.open_float, opts)
           vim.keymap.set("n", "<leader>q", vim.diagnostic.setloclist, opts)
 
           vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
@@ -158,7 +135,6 @@ require("lazy").setup({
         end,
       })
 
-      -- Customize server settings using native `vim.lsp.config`
       vim.lsp.config("lua_ls", {
         settings = {
           Lua = {
@@ -169,5 +145,5 @@ require("lazy").setup({
         },
       })
     end,
-  }
+  },
 })
